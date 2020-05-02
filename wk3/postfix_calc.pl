@@ -1,7 +1,6 @@
 postfix(Operations, Result):-
   postfix_(Operations, [], Result).
 
-
 postfix_(['+'|Operations], [V1,V2|Rest], Result) :-
   Out is V1 + V2,
   postfix_(Operations, [Out|Rest], Result),
