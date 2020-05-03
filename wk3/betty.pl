@@ -13,8 +13,8 @@ availability2(X):-
  * Entry point function
  */
 schedule(Availability, Schedule):-
-  HoursOfDay = [1,2,3,4,5,6,7,8],
-  length(HoursOfDay, NoOfWorkingHours),
+  NoOfWorkingHours = 8,
+  findall(V, between(1, NoOfWorkingHours, V), HoursOfDay),
   length(Schedule, NoOfWorkingHours),
   zip(HoursOfDay, Schedule, ScheduleSlots),
   schedule_(Availability, ScheduleSlots).
