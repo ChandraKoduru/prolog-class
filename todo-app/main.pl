@@ -21,8 +21,9 @@ user:file_search_path(assets, bootstrap(js)).
 user:file_search_path(assets, './assets/other_resources').
 
 %  Asset dependency management
-% :- html_resource(assets('bootstrap.css'), []).
-% :- html_resource(assets('bootstrap.js'), []).
+:- html_resource(assets('sticky-footer-navbar.css'), [requires(assets('bootstrap.css'))]).
+:- html_resource(assets('bootstrap.bundle.js'), [requires(assets('jquery-3.5.1.js'))]).
+:- html_resource(assets('bootstrap.js'), [requires(assets('jquery-3.5.1.js'))]).
 
 % :- http_handler(assets(css), serve_files_in_directory(css), [prefix]).
 % :- http_handler(assets(js), serve_files_in_directory(js), [prefix]).
@@ -42,7 +43,9 @@ user:file_search_path(assets, './assets/other_resources').
 :- multifile user:head//2.
 
 user:head(chandra_style, Header) -->
-    html(head([yo("Chandra's TODO"), Header])).
+    html(head([meta([name='viewport', 
+                     content=['width=device-width,', 'initial-scale=1,', 'shrink-to-fit=no']], []),
+               yo("Chandra's TODO"), Header])).
 
 user:body(chandra_style, Body) -->
     html([\stylesheets, 
@@ -54,10 +57,10 @@ user:body(chandra_style, Body) -->
                \sticky_footer])]).
 
 navbar -->
-    html(header(nav([class=['navbar', 'navbar-expand', 'navbar-dark', 'fixed-top', 'bg-dark']],
+    html(header(nav([class=['navbar', 'navbar-expand', 'navbar-light', 'fixed-top', 'bg-light']],
             [div("Chandra's TODO")]))).
            
-scripts --> html([ \html_requires(assets('bootstrap.js'))
+scripts --> html([ \html_requires(assets('bootstrap.bundle.js'))
                  ]).
 stylesheets --> html([
                 \html_requires(assets('bootstrap.css')),
@@ -69,28 +72,52 @@ sticky_footer -->
                      span([class=['text-muted']], 
                           "Footer"))])).
 
+
+todo_item(todo(_, TodoId, TodoText), O):-
+    O = li([class=['list-group-item']], 
+           [TodoText,span([]," "),a(href=location_by_id(delete_todo)+TodoId, "Remove")]).
+
+todo_items(TodoItems)--> 
+    {
+        maplist(todo_item, TodoItems, LiItems)
+    },
+    html(ul([class=['list-group']], LiItems)).
+
 home_page_handler(_Request):-
     user_id(UserId),
-    % todo_api:load_user(UserId),
+    % todo_api:new_user(UserId),
     userid_todos(UserId, Todos),
     http_log('UserId ~w', [UserId]),
     reply_html_page(
         chandra_style,
-        [title('Chandra- ToDo Application')],
-        [hi('Body'),
-        p(['UserId ', UserId]),
-        p('Oncemore - UserId ~w'-[UserId]),
-        p('User Todos ~w'-[Todos]),
-        a(href=location_by_id(delete_todo), 'Delete Todo')
+        [title('hello')],
+        [\todo_items(Todos)
+         % \new_todo_item,
+        % p(['UserId ', UserId])
+        % p('Oncemore - UserId ~w'-[UserId]),
+        % p('User Todos ~w'-[Todos]),
+        % a(href=location_by_id(delete_todo), 'Delete Todo')
         ]
     ).
 
 :- http_handler(root(delete/TodoId), delete_todo(TodoId), [id(delete_todo)]).
 
-delete_todo(TodoId, _Request):-
+delete_todo(TodoId, Request):-
+    user_id(UserId),
+    userid_todos(UserId, Todos),
+    http_log('UserId ~w', [UserId]),
+    http_log('TodoId ~w', [TodoId]),
+    todo_api:userid_remove_todo(UserId, TodoId),
     reply_html_page(
-        [title('Chandra- ToDo Application')],
-        [h1(TodoId), h2("Deleted todo")]
+        chandra_style,
+        [title('hello')],
+        [\todo_items(Todos)
+         % \new_todo_item,
+        % p(['UserId ', UserId])
+        % p('Oncemore - UserId ~w'-[UserId]),
+        % p('User Todos ~w'-[Todos]),
+        % a(href=location_by_id(delete_todo), 'Delete Todo')
+        ]
     ).
 
 a_handler(From, Request) :-
