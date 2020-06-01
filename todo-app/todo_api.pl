@@ -1,46 +1,46 @@
-:- module(todo_api, [init/0, 
-    new_session/1, remove_session/1, 
-    sessionid_todos/2, sessionid_new_todo/3, sessionid_remove_todo/2
+:- module(todo_api, 
+    [init/0, new_user/1, remove_user/1, 
+    userid_todos/2, userid_new_todo/3, userid_remove_todo/2
     ]).
 :- dynamic(todo/3).
-:- dynamic(todo_session_maxid/2).
+:- dynamic(todo_user_maxid/2).
 
 init:-
     retractall(todo(_, _, _)),
-    retractall(todo_session_maxid(_, _)),
-    new_session(1).
+    retractall(todo_user_maxid(_, _)),
+    new_user(1).
 
-% existing session
-sessionid_next_todoid(SessionId, TodoId):-
-    todo_session_maxid(SessionId, TodoId0), !,
+% existing user
+userid_next_todoid(UserId, TodoId):-
+    todo_user_maxid(UserId, TodoId0), !,
     TodoId is TodoId0 + 1,
-    retract(todo_session_maxid(SessionId, TodoId0)),
-    assert(todo_session_maxid(SessionId, TodoId)).
+    retract(todo_user_maxid(UserId, TodoId0)),
+    assert(todo_user_maxid(UserId, TodoId)).
 
-sessionid_next_todoid(SessionId, TodoId):-
+userid_next_todoid(UserId, TodoId):-
     TodoId = 1,
-    assert(todo_session_maxid(SessionId, TodoId)).
+    assert(todo_user_maxid(UserId, TodoId)).
 
-% initializing a new session' data
-new_session(SessionId):-
-    todo_session_maxid(SessionId, _), 
-    !, % A session with the given sessionid already exists
+% initializing a new user' data
+new_user(UserId):-
+    todo_user_maxid(UserId, _), 
+    !, % A user with the given userid already exists
     fail. 
-new_session(SessionId):-
-    sessionid_new_todo(SessionId, "First", _),
-    sessionid_new_todo(SessionId, "Second", _).
+new_user(UserId):-
+    userid_new_todo(UserId, "First", _),
+    userid_new_todo(UserId, "Second", _).
 
-remove_session(SessionId):-
-    retractall(todo(SessionId, _, _)),
-    retractall(todo_session_maxid(SessionId, _)).
+remove_user(UserId):-
+    retractall(todo(UserId, _, _)),
+    retractall(todo_user_maxid(UserId, _)).
 
-sessionid_todos(SessionId, Todos):-
-	findall(todo(SessionId, TodoId, TodoText), todo(SessionId, TodoId, TodoText), Todos).
+userid_todos(UserId, Todos):-
+	findall(todo(UserId, TodoId, TodoText), todo(UserId, TodoId, TodoText), Todos).
 
-sessionid_new_todo(SessionId, TodoText, Todo):-
-    sessionid_next_todoid(SessionId, TodoId),
-    Todo = todo(SessionId, TodoId, TodoText),
+userid_new_todo(UserId, TodoText, Todo):-
+    userid_next_todoid(UserId, TodoId),
+    Todo = todo(UserId, TodoId, TodoText),
 	asserta(Todo).
 
-sessionid_remove_todo(SessionId, TodoId):-
-	retract(todo(SessionId, TodoId, _)).
+userid_remove_todo(UserId, TodoId):-
+	retract(todo(UserId, TodoId, _)).
