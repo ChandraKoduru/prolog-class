@@ -18,6 +18,7 @@ http:location(assets, root(assets), []).
 user:file_search_path(bootstrap, './assets/bootstrap-4.5.0-dist').
 user:file_search_path(assets, bootstrap(css)).
 user:file_search_path(assets, bootstrap(js)).
+user:file_search_path(assets, './assets/other_resources').
 
 %  Asset dependency management
 % :- html_resource(assets('bootstrap.css'), []).
@@ -37,16 +38,46 @@ user:file_search_path(assets, bootstrap(js)).
 
 :- http_handler(root(.), home_page_handler, [id(home_page)]).
 
+:- multifile user:body//2.
+:- multifile user:head//2.
+
+user:head(chandra_style, Header) -->
+    html(head([yo("Chandra's TODO"), Header])).
+
+user:body(chandra_style, Body) -->
+    html([\stylesheets, 
+          \scripts,
+          body([class=['d-flex', 'flex-column', 'h-100']], 
+              [\navbar,
+               main([class=['flex-shrink-0'], role='main'], 
+                    div([class='container'], Body)),
+               \sticky_footer])]).
+
+navbar -->
+    html(header(nav([class=['navbar', 'navbar-expand', 'navbar-dark', 'fixed-top', 'bg-dark']],
+            [div("Chandra's TODO")]))).
+           
+scripts --> html([ \html_requires(assets('bootstrap.js'))
+                 ]).
+stylesheets --> html([
+                \html_requires(assets('bootstrap.css')),
+                \html_requires(assets('sticky-footer-navbar.css'))]).
+
+sticky_footer -->
+    html(footer([class=['footer', 'mt-auto', 'py-3']],
+                [div([class=['container']], 
+                     span([class=['text-muted']], 
+                          "Footer"))])).
+
 home_page_handler(_Request):-
     user_id(UserId),
     % todo_api:load_user(UserId),
     userid_todos(UserId, Todos),
     http_log('UserId ~w', [UserId]),
     reply_html_page(
+        chandra_style,
         [title('Chandra- ToDo Application')],
         [hi('Body'),
-        \html_requires(assets('bootstrap.css')),
-        \html_requires(assets('bootstrap.js')),
         p(['UserId ', UserId]),
         p('Oncemore - UserId ~w'-[UserId]),
         p('User Todos ~w'-[Todos]),
