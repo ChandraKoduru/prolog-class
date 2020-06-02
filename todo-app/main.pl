@@ -37,8 +37,6 @@ user:file_search_path(assets, './assets/other_resources').
 
 :- http_handler(assets(.), serve_files_in_directory(assets), [prefix, id(assets)]).
 
-:- http_handler(root(.), home_page_handler, [id(home_page)]).
-
 :- multifile user:body//2.
 :- multifile user:head//2.
 
@@ -73,50 +71,50 @@ sticky_footer -->
                           "Footer"))])).
 
 
-todo_item(todo(_, TodoId, TodoText), O):-
+todo_li_item(todo(_, TodoId, TodoText), O):-
     O = li([class=['list-group-item']], 
            [TodoText,span([]," "),a(href=location_by_id(delete_todo)+TodoId, "Remove")]).
 
-todo_items(TodoItems)--> 
+todo_ul_items(TodoItems)--> 
     {
-        maplist(todo_item, TodoItems, LiItems)
+        maplist(todo_li_item, TodoItems, LiItems)
     },
     html(ul([class=['list-group']], LiItems)).
 
-home_page_handler(_Request):-
+:- http_handler(root(.), home_page_handler, [id(home_page)]).
+
+home_page_handler(Request):-
     user_id(UserId),
     % todo_api:new_user(UserId),
-    userid_todos(UserId, Todos),
     http_log('UserId ~w', [UserId]),
-    reply_html_page(
-        chandra_style,
-        [title('hello')],
-        [\todo_items(Todos)
-         % \new_todo_item,
-        % p(['UserId ', UserId])
-        % p('Oncemore - UserId ~w'-[UserId]),
-        % p('User Todos ~w'-[Todos]),
-        % a(href=location_by_id(delete_todo), 'Delete Todo')
-        ]
-    ).
+    render_body(Request).
+
+:- http_handler(root(add/TodoText), add_todo(TodoText), [id(add_todo)]).
+
+add_todo(TodoText, Request):-
+    user_id(UserId),
+    http_log('UserId ~w', [UserId]),
+    userid_new_todo(UserId, TodoText, _),
+    render_body(Request).
 
 :- http_handler(root(delete/TodoId), delete_todo(TodoId), [id(delete_todo)]).
 
 delete_todo(TodoId, Request):-
     user_id(UserId),
+    atom_number(TodoId, TodoIdAsNumber),
+    (userid_remove_todo(UserId, TodoIdAsNumber);true), % It is OK, if invoked on a deleted item.
+    render_body(Request).
+
+render_body(_Request):-
+    user_id(UserId),
     userid_todos(UserId, Todos),
-    http_log('UserId ~w', [UserId]),
-    http_log('TodoId ~w', [TodoId]),
-    todo_api:userid_remove_todo(UserId, TodoId),
     reply_html_page(
         chandra_style,
-        [title('hello')],
-        [\todo_items(Todos)
-         % \new_todo_item,
-        % p(['UserId ', UserId])
-        % p('Oncemore - UserId ~w'-[UserId]),
-        % p('User Todos ~w'-[Todos]),
-        % a(href=location_by_id(delete_todo), 'Delete Todo')
+        [title('Todo-List')],
+        [
+        p(UserId),
+        \todo_ul_items(Todos)
+         % a(href=location_by_id(delete_todo), 'Delete Todo')
         ]
     ).
 

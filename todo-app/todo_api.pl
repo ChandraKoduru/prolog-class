@@ -43,4 +43,5 @@ userid_new_todo(UserId, TodoText, Todo):-
 	asserta(Todo).
 
 userid_remove_todo(UserId, TodoId):-
+    integer(TodoId),
 	retract(todo(UserId, TodoId, _)).
