@@ -7,6 +7,7 @@
 :- use_module(library(http/http_server_files)).
 :- use_module(library(http/http_log)).
 :- use_module(library(http/http_session)).
+:- use_module(library(http/http_client)).
 :- use_module(todo_api).
 
 :- multifile http:location/3.
@@ -56,7 +57,7 @@ user:body(chandra_style, Body) -->
 
 navbar -->
     html(header(nav([class=['navbar', 'navbar-expand', 'navbar-light', 'fixed-top', 'bg-light']],
-            [div("Chandra's TODO")]))).
+            [div([a([href="/"], "Chandra's TODO")])]))).
            
 scripts --> html([ \html_requires(assets('bootstrap.bundle.js'))
                  ]).
@@ -89,12 +90,27 @@ home_page_handler(Request):-
     http_log('UserId ~w', [UserId]),
     render_body(Request).
 
-:- http_handler(root(add/TodoText), add_todo(TodoText), [id(add_todo)]).
+:- http_handler(root(add), add_todo, [id(add_todo)]).
 
-add_todo(TodoText, Request):-
+data_to_todotext(['='(todo_text, TodoText)|_], TodoText):- !.
+data_to_todotext([_|R], TodoText):-
+    data_to_todotext(R, TodoText).
+
+add_todo(Request):-
+    member(method(post), Request), !,
+    http_read_data(Request, Data, []),
+    (data_to_todotext(Data, TodoText); TodoText=""), % default case
+    http_log("~nData: ~w ~n~n", [Data]),
+    http_log("~nTodoText: ~w ~n~n", [TodoText]),
     user_id(UserId),
     http_log('UserId ~w', [UserId]),
     userid_new_todo(UserId, TodoText, _),
+        % format('Content-type: text/html~n~n', []),
+	% format('<p>', []),
+        % portray_clause(Data),
+	% format('</p><p>========~n', []),
+	% portray_clause(Request),
+	% format('</p>').
     render_body(Request).
 
 :- http_handler(root(delete/TodoId), delete_todo(TodoId), [id(delete_todo)]).
@@ -112,11 +128,18 @@ render_body(_Request):-
         chandra_style,
         [title('Todo-List')],
         [
-        p(UserId),
+        % p(UserId),
+        \new_todo_form,
         \todo_ul_items(Todos)
          % a(href=location_by_id(delete_todo), 'Delete Todo')
         ]
     ).
+
+new_todo_form --> 
+    html([form([action='/add', method='POST'], [
+            p([], [ label([for=todo_text],'Todo:'), input([name=todo_text, type=textarea]) ]),
+            p([], input([name=submit, type=submit, value='Submit'], []))
+    ])]).
 
 a_handler(From, Request) :-
 	member(request_uri(URI), Request),
