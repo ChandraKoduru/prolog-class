@@ -124,22 +124,28 @@ delete_todo(TodoId, Request):-
 render_body(_Request):-
     user_id(UserId),
     userid_todos(UserId, Todos),
+    % p(UserId),
     reply_html_page(
         chandra_style,
         [title('Todo-List')],
-        [
-        % p(UserId),
-        \new_todo_form,
-        \todo_ul_items(Todos)
-         % a(href=location_by_id(delete_todo), 'Delete Todo')
-        ]
+        [div([class='container'], 
+             div([class='row'], 
+               [
+                div([class='col-8'], \todo_ul_items(Todos)),
+                div([class='col-4'], \new_todo_form)
+               ])
+            )]
+        % \new_todo_form,
+        % \todo_ul_items(Todos)
+        % ]
     ).
 
 new_todo_form --> 
     html([form([action='/add', method='POST'], [
-            p([], [ label([for=todo_text],'Todo:'), input([name=todo_text, type=textarea]) ]),
-            p([], input([name=submit, type=submit, value='Submit'], []))
-    ])]).
+            div([class=['form-group']], 
+               [label([for=todo_text],'Todo:'), input([name=todo_text, type=textarea]) ]),
+            button([name=submit, type=submit,class=['btn', 'btn-primary']], "Submit")])]).
+                   
 
 a_handler(From, Request) :-
 	member(request_uri(URI), Request),
